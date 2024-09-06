@@ -1,4 +1,4 @@
-const { getMessageObject, post } = require('./common');
+const { getMessageObject, post, getPostChannelId } = require('./common');
 
 exports.handler = async event => {
   const msgObj = getMessageObject(event);
@@ -9,8 +9,9 @@ exports.handler = async event => {
       body: 'No message'
     };
   }
+  const channelId = getPostChannelId(event);
 
-  await Promise.all([post(msgObj)]);
+  await Promise.all([post(msgObj, channelId)]);
 
   return {
     statusCode: 200,

@@ -25,13 +25,13 @@ Convert github mentions to slack mentions
   - Use Node.js
   - Trigger is AWS API Gateway
 - Copy to index.js and common.js
-- Create mapping.json
+- Create users.json
   - From github_id to slack_id
+- Create repositories.json
+  - From <repository name> to <slack_channnel_id>
 - Setting ENV Vals
   - API_TOKEN
     - OAuth Access Token
-  - CHANNEL_ID
-    - Notification slack channel id
 
 ### Setting Webhook
 - Create GitHub repository Webhook setting

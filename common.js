@@ -1,5 +1,6 @@
 const https = require('https');
-const MAPPING_LIST = require('./mapping.json');
+const USERS = require('./users.json');
+const REPOSITORIES = require('./repositories.json');
 
 function getMentionList(body) {
   const mentionList = [];
@@ -8,19 +9,19 @@ function getMentionList(body) {
     return mentionList;
   }
 
-  Object.keys(MAPPING_LIST).forEach(key => {
+  Object.keys(USERS).forEach(key => {
     if (body.indexOf(`@${key}`) >= 0) {
-      mentionList.push(`<@${MAPPING_LIST[key]}>`);
+      mentionList.push(`<@${USERS[key]}>`);
     }
   });
 
   return mentionList;
 }
 
-function getPostData(message) {
+function getPostData(message, channelId) {
   return {
     username: 'github2slack',
-    channel: process.env.CHANNEL_ID,
+    channel: channelId,
     text: message.title,
     token: process.env.API_TOKEN
   };
@@ -39,9 +40,9 @@ function getPostOptions() {
   };
 }
 
-function post(message) {
+function post(message, channelId) {
   return new Promise((resolve, _reject) => {
-    const data = getPostData(message);
+    const data = getPostData(message, channelId);
     const options = getPostOptions();
     const req = https.request(options, res => {
       res.setEncoding('utf8');
@@ -136,10 +137,21 @@ function getMessageObject(event) {
   return msgObj;
 }
 
+function getPostChannelId(event) {
+  const gitHubBody = JSON.parse(event.body);
+  const repositories = JSON.stringify(REPOSITORIES);
+
+  if (repositories.indexOf(gitHubBody.repository.name) >= 0) {
+    return REPOSITORIES[gitHubBody.repository.name];
+  }
+  return '';
+}
+
 module.exports = {
   getMentionList,
   getPostData,
   getPostOptions,
   post,
-  getMessageObject
+  getMessageObject,
+  getPostChannelId
 };

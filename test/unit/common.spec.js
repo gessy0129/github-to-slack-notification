@@ -2,27 +2,28 @@ const {
   getMentionList,
   getPostData,
   getPostOptions,
-  getMessageObject
+  getMessageObject,
+  getPostChannelId
 } = require('../../common');
 
 describe('getMentionList', () => {
   test('convert mention user', () => {
-    const convertData = getMentionList('@GITHUB_USER_ID_1 aaa');
-    expect(convertData).toStrictEqual(['<@SLACK_USER_ID_1>']);
+    const convertData = getMentionList('@ma3tk aaa');
+    expect(convertData).toStrictEqual(['<@U1KTF129J>']);
   });
 
   test('convert mention users', () => {
     const convertData = getMentionList(
-      '@GITHUB_USER_ID_1 aaa @GITHUB_USER_ID_2'
+      '@ma3tk aaa @kxmxyx'
     );
     expect(convertData).toStrictEqual([
-      '<@SLACK_USER_ID_1>',
-      '<@SLACK_USER_ID_2>'
+      '<@U02JR88JRQU>',
+      '<@U1KTF129J>'
     ]);
   });
 
   test('return empty array when not in mapping.json', () => {
-    const convertData = getMentionList('@GITHUB_USER_ID_5');
+    const convertData = getMentionList('@dummy');
     expect(convertData).toStrictEqual([]);
   });
 
@@ -34,10 +35,10 @@ describe('getMentionList', () => {
 
 describe('getPostData', () => {
   test('get data', () => {
-    process.env.CHANNEL_ID = 'ABC123';
     process.env.API_TOKEN = 'DEF456';
     const message = { title: 'post data title' };
-    expect(getPostData(message)).toStrictEqual({
+    const channelId = 'ABC123';
+    expect(getPostData(message, channelId)).toStrictEqual({
       username: 'github2slack',
       channel: 'ABC123',
       text: message.title,
@@ -248,12 +249,12 @@ describe('getMessageObject', () => {
     event.headers['X-GitHub-Event'] = 'pull_request';
 
     event.body.action = 'opened';
-    event.body.pull_request.body = '@GITHUB_USER_ID_1 abc';
+    event.body.pull_request.body = '@ma3tk abc';
     event.body = JSON.stringify(event.body);
     expect(getMessageObject(event)).toStrictEqual({
       title:
-        '<@SLACK_USER_ID_1> author Pullrequest Opened [<https://github.com/hoge/fuga/pull/1|test pull_request title>]',
-      body: '@GITHUB_USER_ID_1 abc'
+        '<@U1KTF129J> author Pullrequest Opened [<https://github.com/hoge/fuga/pull/1|test pull_request title>]',
+      body: '@ma3tk abc'
     });
   });
 
@@ -265,5 +266,41 @@ describe('getMessageObject', () => {
       title: null,
       body: null
     });
+  });
+});
+
+describe('getPostChannelId', () => {
+  let event = null;
+  beforeEach(() => {
+    event = {
+      headers: { 'X-GitHub-Event': '' },
+      body: {
+        pull_request: {
+          title: 'test pull_request title',
+          html_url: 'https://github.com/hoge/fuga/pull/1',
+          body: 'pull_request body',
+          user: {
+            login: 'author'
+          }
+        },
+        repository: {
+          id: 830276446,
+          name: 'REPOSITORY_NAME_1',
+          full_name: 'REPOSITORY_NAME_1',
+          private: true
+        }
+      }
+    };
+  });
+
+  test('get data', () => {
+    event.body = JSON.stringify(event.body);
+    expect(getPostChannelId(event)).toStrictEqual('SLACK_CHANNEL_ID_1');
+  });
+
+  test('get empty data', () => {
+    event.body.repository.name = 'Sample-Repository';
+    event.body = JSON.stringify(event.body);
+    expect(getPostChannelId(event)).toStrictEqual('');
   });
 });
